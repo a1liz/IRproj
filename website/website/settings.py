@@ -25,7 +25,7 @@ SECRET_KEY = 'ojk6w06a@6t2$dl#t@u9w0)euctws#%*!nmy+iz=euo%#g)@gg'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.nkuliz.com',]
+ALLOWED_HOSTS = ['www.nkuliz.com','localhost']
 
 
 # Application definition

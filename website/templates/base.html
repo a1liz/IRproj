@@ -16,8 +16,9 @@
         <div>
         <div id="input-box">
         <section class="content">
+                {% csrf_token %}
         <span class="input input--ichiro">
-            <input class="input__field input__field--ichiro" type="text" id="input" />
+            <input class="input__field input__field--ichiro" type="text" id="input" name="q" value="123131"/>
             <label class="input__label input__label--ichiro" for="input">
                 <span class="input__label-content input__label-content--ichiro">请输入需要检索的内容：</span>
             </label>
@@ -25,11 +26,13 @@
         </section>
         </div>
         <div id="submit-btn">
-        <a class="btn btn-default btn-lg ripple">搜索一波</a>
+            <a href="../search" class="btn btn-default btn-lg ripple a_post">搜索一波</a>
         </div>
+        <p> {{ rlt }} </p>
         </div>
     </body>
     <script src="/static/js/classie.js"></script>
+    <script src="/static/js/jquery-3.2.1.min.js"></script>
     <script>
 			(function() {
 				// trim polyfill : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim
@@ -64,5 +67,23 @@
 					}
 				}
 			})();
+
+            var fd = $('#input').val();
+            $(".a_post").on("click",function(event){
+                event.preventDefault();
+                alert(fd);
+                $.ajax({
+                    type: "POST",
+                    url: "/search/",
+                    data: '{"q":fd}',
+                    success: function(result){
+                        console.log("success");
+                        console.log(fd);
+                    },
+                    error: function(result){
+                        console.log("error");
+                    }
+                });
+            });
 		</script>
 </html>
