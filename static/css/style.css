@@ -1,0 +1,22 @@
+html {
+    background-color: #f9f7f6;
+}
+
+#input-box {
+    width: 60%;
+    float: left;
+    height: auto;
+    padding-left: 25%;
+}
+
+#submit-btn {
+    padding-top: 120px;
+    background-color: #f9f7f6;
+}
+
+#title {
+    text-align: center;
+    background: #f9f7f6;
+    font-size: 30px;
+    padding-top: 30px;
+}
