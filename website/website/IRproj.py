@@ -1,6 +1,5 @@
 import os
 import fileinput
-import pymysql
 import json
 
 
@@ -107,8 +106,16 @@ def createDocID(filePath):
     except BaseException as e:
         print("error: " + e)
         
+def searchWord(word):
+    data = {}
+    with open('website/wordRecording.json') as json_file:
+        data = json.load(json_file)
+    if word in data:
+        return {word:data[word]}
+    else:
+        return {}
 
 if __name__ == '__main__':
-    filePath = 'Shakespeare'
-    wordRecording(filePath)
+    word = input()
+    print(searchWord(word))
         

@@ -21,4 +21,5 @@ urlpatterns = [
     url(r'^search/$', search.search_post),
     url(r'^admin/', admin.site.urls),
     url(r'^$', view.hello),
+    url(r'^ajax/$', search.ajax),
 ]
