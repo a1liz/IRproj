@@ -1,6 +1,7 @@
 import os
 import fileinput
 import json
+from website import global_list
 
 
 def wordRecording(filePath):
@@ -109,13 +110,123 @@ def createDocID(filePath):
 def searchWord(word):
     data = {}
     with open('website/wordRecording.json') as json_file:
+    # with open('wordRecording.json') as json_file:
         data = json.load(json_file)
-    if word in data:
-        return {word:data[word]}
+        wordSet = set()
+        if word in data:
+            for i in data[word]:
+                wordSet.add(i)
+    return wordSet
+    # return data[word]
+
+
+
+import re
+
+# 将word所有括号自底向上解析出来
+def searchForBracket(word,num):
+    #pattern = re.compile(r'\(\w*[&\|~]*\w*\)')
+    #pattern = re.compile(r'a+')
+    #match = pattern.match(word)
+    m = re.findall(r'\(\w*[&\|~\$]*\w*\)',word,re.M|re.I)
+    for i in m:
+        global_list.reDict[num] = i
+        word = word.replace(i,'$'+str(num),1)
+        num = num + 1
+    if re.findall(r'\(\w*[&\|~\$]*\w*\)',word,re.M|re.I):
+        searchForBracket(word,num)
     else:
-        return {}
+        global_list.reDict[num] = word
+    return toDocID(searchAllWord())
+
+# 将解析后的reDict结果进行集合逻辑运算，并返回最终结果
+def searchAllWord():
+    num = 1
+
+    while num in global_list.reDict:
+        global_list.reDict[num] = global_list.reDict[num].replace('(','')
+        global_list.reDict[num] = global_list.reDict[num].replace(')','')
+        m = re.findall(r'[&\|~]',global_list.reDict[num],re.M|re.I)
+        # print(m)
+        if len(m) == 0:
+            global_list.resultDict[num] = getWordSet(global_list.reDict[num])
+        # 最简形式
+        elif len(m) == 1:
+            wordArray = divideWord(global_list.reDict[num])
+            global_list.resultDict[num] = simpleMatch([getWordSet(wordArray[0]),wordArray[1],wordArray[2]])
+        # 复杂形式
+        else :
+            wordArray = divideWord(global_list.reDict[num])
+            global_list.resultDict[num] = complexMatch([getWordSet(wordArray[0]),wordArray[1],wordArray[2]])
+        num = num + 1
+    return global_list.resultDict[len(global_list.reDict)]
+
+# 将整句分成左部、运算符、右部
+def divideWord(word):
+    m = re.findall(r'[&\|~]',word,re.M|re.I)
+    op = m[0]
+    x,y = word.split(op)
+    return [x,op,y]
+
+# 返回单词对应的docID集合
+def getWordSet(word):
+    if len(re.findall(r'\$[\d]+',word,re.M|re.I)) == 1:
+        wordSet = global_list.resultDict[int(word.replace('$',''))]
+        # print('wordSet1')
+        # print(wordSet)
+    else:
+        wordSet = searchWord(word)
+        # print('wordSet2')
+        # print(wordSet)
+    return wordSet
+
+
+# 单一形式语句匹配结果
+def simpleMatch(setAndWordArray):
+    setx = setAndWordArray[0]
+    op = setAndWordArray[1]
+    y = setAndWordArray[2]
+    sety = getWordSet(y)
+    # 集合运算
+    if op == '&':
+        setResult = setx & sety
+    elif op == '|':
+        setResult = setx | sety
+    elif op == '~':
+        setResult = setx - sety
+    return setResult
+
+# 复杂形式语句匹配结果
+def complexMatch(setAndWordArray):
+    if len(re.findall(r'[&\|~]',setAndWordArray[2],re.M|re.I)) == 0:
+        return simpleMatch(wordArray)
+    else :
+        newWordArray = divideWord(setAndWordArray[2])
+        setx = simpleMatch([setAndWordArray[0],setAndWordArray[1],newWordArray[0]])
+        return complexMatch([setx,newWordArray[1],newWordArray[2]])
+
+        
+def toDocID(setResult):
+    arrayResult = []
+    for i in setResult:
+        arrayResult.append(int(i))
+    arrayResult = sorted(arrayResult)
+    tmpName = ""
+    result = ''
+    # with open('docID.json') as json_file:
+    with open('website/docID.json') as json_file:
+        data = json.load(json_file)
+        for i in arrayResult:
+            if str(i) in data:
+                if tmpName != data[str(i)]['name']:
+                    result += '\n' + data[str(i)]['name'] + ' '
+                    tmpName = data[str(i)]['name']
+                result += ',ACT ' + data[str(i)]['ACT'] + ' SCENE ' + data[str(i)]['SCENE']
+    return result
+
+
+
+
 
 if __name__ == '__main__':
-    word = input()
-    print(searchWord(word))
-        
+    print(searchForBracket('judgment&(and~go)',1))

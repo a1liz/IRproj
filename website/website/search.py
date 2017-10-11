@@ -20,8 +20,8 @@ def ajax(request):
     if request.method =='POST':
         word=request.POST['q']
         try:
-            tmp = IRproj.searchWord(word)
-            ctx['rlt'] = tmp
+            #tmp = IRproj.searchWord(word)
+            ctx['rlt'] = IRproj.searchForBracket(word,1)
         except BaseException as e:
             return HttpResponse(json.dumps({'a': 'FoundWordException!'}), content_type="application/json")
         #ctx['rlt'] = word

@@ -1,0 +1,2 @@
+reDict = {}
+resultDict = {}
