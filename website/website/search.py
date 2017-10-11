@@ -7,7 +7,7 @@ from . import IRproj
 
 @csrf_exempt
 def search_post(request):
-    ctx = {'rlt':'123'}
+    ctx = {'rlt':'实例：judgment&(and~go)'}
     if request.method =='POST':
         word=request.POST.get('q')
         ctx['rlt'] = 'afasdfasfas'
@@ -21,7 +21,13 @@ def ajax(request):
         word=request.POST['q']
         try:
             #tmp = IRproj.searchWord(word)
-            ctx['rlt'] = IRproj.searchForBracket(word,1)
+            if word == " ":
+                ctx['rlt'] = '请输入值'
+            result = IRproj.searchForBracket(word,1)
+            if result == '':
+                ctx['rlt'] = '结果为空'
+            else:
+                ctx['rlt'] = result
         except BaseException as e:
             return HttpResponse(json.dumps({'a': 'FoundWordException!'}), content_type="application/json")
         #ctx['rlt'] = word

@@ -19,7 +19,7 @@
         <span class="input input--ichiro">
             <input class="input__field input__field--ichiro" type="text" id="input" name="q"/>
             <label class="input__label input__label--ichiro" for="input">
-                <span class="input__label-content input__label-content--ichiro">请输入需要检索的内容：</span>
+                <span class="input__label-content input__label-content--ichiro">请输入需要检索的内容：(&、｜、～代表并、或、差)</span>
             </label>
         </span>
         </section>
@@ -28,7 +28,7 @@
             <a href="../search" class="btn btn-default btn-lg ripple a_post">搜索一波</a>
         </div>
         </div>
-        <h1> {{ rlt }} </h1>
+        <p class = "result"> {{ rlt }} </p>
     </body>
     <script src="/static/js/classie.js"></script>
     <script src="/static/js/jquery-3.2.1.min.js"></script>
@@ -75,7 +75,7 @@
                     url: "/ajax/",
                     data: {"q":fd},
                     success: function(result){
-                        $("h1").html(result['rlt'])
+                        $(".result").html(result['rlt'])
                         console.log("success");
                         console.log(result);
                     },

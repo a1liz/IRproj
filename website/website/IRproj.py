@@ -219,7 +219,7 @@ def toDocID(setResult):
         for i in arrayResult:
             if str(i) in data:
                 if tmpName != data[str(i)]['name']:
-                    result += '\n' + data[str(i)]['name'] + ' '
+                    result += '<br/>' + data[str(i)]['name'] + ' '
                     tmpName = data[str(i)]['name']
                 result += ',ACT ' + data[str(i)]['ACT'] + ' SCENE ' + data[str(i)]['SCENE']
     return result

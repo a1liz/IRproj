@@ -20,3 +20,10 @@ html {
     font-size: 30px;
     padding-top: 30px;
 }
+
+.result {
+    text-align: center;
+    background: #f9f7f6;
+    font-size: 20px;
+    padding-top: 150px;
+}
