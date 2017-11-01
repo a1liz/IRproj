@@ -1,2 +1,2 @@
-./website/website/__pycache__/*
-./website/db.sqlite3
+website/website/__pycache__/*
+website/db.sqlite3
