@@ -1,0 +1,1145 @@
+(cid:39)(cid:72)(cid:72)(cid:83)(cid:3)(cid:47)(cid:72)(cid:68)(cid:85)(cid:81)(cid:76)(cid:81)(cid:74)(cid:3)(cid:73)(cid:82)(cid:85)(cid:3)(cid:54)(cid:87)(cid:82)(cid:70)(cid:78)(cid:3)(cid:51)(cid:85)(cid:72)(cid:71)(cid:76)(cid:70)(cid:87)(cid:76)(cid:82)(cid:81)(cid:3)(cid:56)(cid:86)(cid:76)(cid:81)(cid:74)(cid:3)
+
+(cid:49)(cid:88)(cid:80)(cid:72)(cid:85)(cid:76)(cid:70)(cid:68)(cid:79)(cid:3)(cid:68)(cid:81)(cid:71)(cid:3)(cid:55)(cid:72)(cid:91)(cid:87)(cid:88)(cid:68)(cid:79)(cid:3)(cid:44)(cid:81)(cid:73)(cid:82)(cid:85)(cid:80)(cid:68)(cid:87)(cid:76)(cid:82)(cid:81)
+
+Ryo Akita
+
+Graduate School of
+System Informatics,
+Kobe University
+
+Akira Yoshihara
+Graduate School of
+System Informatics,
+Kobe University
+
+Takashi Matsubara
+Graduate School of
+System Informatics,
+Kobe University
+
+Kuniaki Uehara
+Graduate School of
+System Informatics,
+Kobe University
+
+akita@ai.cs.kobe-u.ac.jp
+
+yoshihara@ai.cs.kobe-u.ac.jp
+
+matsubara@phoenix.kobe-u.ac.jp
+
+uehara@kobe-u.ac.jp
+
+Abstract—This paper proposes a novel application of deep
+learning models, Paragraph Vector, and Long Short-Term
+Memory (LSTM), to ﬁnancial time series forecasting. Investors
+make decisions according to various factors, including con-
+sumer price index, price-earnings ratio, and miscellaneous
+events reported in newspapers. In order to assist their decisions
+in a timely manner, many automatic ways to analyze those
+information have been proposed in the last decade. However,
+many of them used either numerical or textual information,
+but not both for a single company. In this paper, we propose
+an approach that converts newspaper articles into their dis-
+tributed representations via Paragraph Vector and models the
+temporal effects of past events on opening prices about multiple
+companies with LSTM. The performance of the proposed
+approach is demonstrated on real-world data of ﬁfty companies
+listed on Tokyo Stock Exchange.
+
+1. Introduction
+
+Stock prices react to events related to business perfor-
+mances or overseas markets. Investors may judge on the
+basis of technical analysis, such as a company’s charts,
+market indices, and on textual information such as newspa-
+pers or news-carrying microblogs. It is however difﬁcult for
+investors to analyze and predict market trends according to
+all of these information. Many Artiﬁcial Intelligence (AI)
+approaches have been investigated to predict those trends
+automatically [1], [2], [3]. For example, investment simula-
+tion analysis with artiﬁcial markets [4], [5] or stock trend
+analysis with lexical cohesion based metric of sentiment
+polarity of ﬁnancial news [6].
+
+However, these works encounter four issues. First, many
+of them which use textual information represent the infor-
+mation as Bag-of-Words [2], [7] despite that the BoW model
+cannot capture the some of useful information for our pur-
+pose since this model cannot consider any interpretation of
+linguistic patterns or aspects such as word order, synonyms,
+co-references, and pronoun resolution. Next, previous works
+often used either textual or numerical information for market
+analysis, while the investors make decisions on various
+information [8]. By using both information, a model can
+
+capture more complex relationships between them and the
+stock price. The third problem is, many previous works have
+considered only one company on training model, while the
+stock prices between companies should be correlational [9].
+Finally, the previous works which use the textual infor-
+mation did not consider stock prices as time series [10].
+This is because of the difﬁculty to make rules how textual
+information inﬂuences time series.
+
+This study focuses on these four issues. We apply
+Paragraph Vector [11] to obtain a continuous distributed
+representation of each news article. We use the distributed
+representations and the diary open prices of 10 companies
+to predict their close price by regression analysis. As the
+predictive model, we employ the Long Short-Term Memory
+(LSTM) model [12], [13] for dealing with the inﬂuence of
+time series. Experiments of stock market simulation on ﬁ-
+nancial news datasets demonstrate that our model effectively
+overcomes these issues.
+
+2. Related Works
+
+2.1. Stock price prediction depending on textual
+information
+
+There has been a number of efforts for predicting the
+trend of stock prices on the basis of textual information [14],
+[15], [16], [17], [18]. For example, Lavrenko et al. [7]
+combined the trends of stock prices and ﬁnancial news
+article, and predicted the trends using the content of news
+articles before the trends actually appear. The predicted
+trends in their simulation were able to make proﬁt.
+
+Schumaker and Chen [8] compared several different
+textual representations such as Bag-of-Words, Noun Phrases,
+and Named Entities for stock price prediction. They showed
+that Bag-of-Words is not sufﬁcient, while support vector
+machines (SVM) with proper noun features is superiority
+of predicting the trend of stock prices. Hagenau et al. [10]
+predicted the difference of open and close prices of a
+stock with the data from DGAP and EuroAdhoc which are
+corporate announcements of Germany and UK, respectively.
+They used bigram, a sequence of two adjacent words and
+
+978-1-5090-0806-3/16/$31.00 copyright 2016 IEEE
+ICIS 2016, June 26-29, 2016, Okayama, Japan
+
+2-word combination as features, and conducted feature se-
+lection according to χ2-statistic with respect to each brand
+of stock prices. Their experiment showed that Chi-Square
+based feature selection method allowed lifting classiﬁcation
+accuracy and reduced overﬁtting.
+
+However, these works share a common problem; the
+efﬁciency in dealing with large scale textual information.
+Ding et al. [9] employed Open IE(cid:674)Information Extraction(cid:675)
+techniques to extract the actor and object of events from
+title of news articles, and predicted the S&P 500 index.
+They used the deep neural network model as classiﬁer and
+achieved better performance than SVM in their experiments.
+
+2.2. Discussion about issues on previous works
+
+The following features are considered to be useful for
+
+predicting daily stock price,
+
+losing semantics of
+
+Textural information should be represented as a ﬁxed-
+the words.
+length vector without
+Lavrenko et al. [7] employed Bag-of-Words based document
+representation. However, the method is not capable of pre-
+serving word order or semantics in the original document.
+A model should deal with time series data since stock
+price data is also time series. Schumaker et al. [8] and
+Ding et al. [9] employed SVM and deep neural network,
+respectively, although these models consider the inﬂuence
+of past events to have a ﬁxed duration. While many events
+have a similar duration of effect, some words, such as “ﬁ-
+nancial crisis”, will have long-lasting inﬂuences. To capture
+such inﬂuences, a model should take time series data into
+consideration. Many of previous works used only one of
+textual, numerical, or image information for stock price
+prediction, and their model was trained with consideration
+about a single company. Nevertheless, it is desirable for the
+prediction model to consider multimodal information and
+multiple companies at the same time since investors make
+decisions depending on various factors such as relationships
+between companies.
+
+3. Proposed Approach
+
+Fig.1 shows an overview of our approach. Our approach
+predicts 10 company’s closing stock prices by regression
+from textual and numerical information by using LSTM,
+which can memorize the previous timesteps due to its archi-
+tecture. We use multiple companies to learn the correlations
+between companies. For example, an event like “Nissan
+recalls...” might make Nissan’s stock price decrease while
+making the stock price of Toyota (another company in the
+same industry) to increase at the same time. We decide
+that the number of predicting companies to be 10 due to
+computation time constraint.
+
+3.1. Representation of textual information
+
+We employ the technique of Paragraph Vector in order
+to obtain the distributed representation by mapping variable-
+length pieces of texts to a ﬁxed-length vector. Paragraph
+
+(cid:3)(cid:7)(cid:8)(cid:14)(cid:7)(cid:15)(cid:15)(cid:9)(cid:12)(cid:11)
+
+(cid:2)(cid:4)(cid:5)(cid:3)
+
+(cid:2)(cid:11)(cid:13)(cid:17)(cid:16)
+
+xt
+
+Wp
+
+Wn
+
+(cid:4)(cid:6)(cid:5)(cid:10)(cid:9)(cid:11)(cid:8)
+
+pt
+
+nt
+
+(cid:1)(cid:12)(cid:11)(cid:6)(cid:5)(cid:16)(cid:7)(cid:11)(cid:5)(cid:16)(cid:7)
+
+(cid:18)(cid:18)(cid:18)
+
+(cid:1)(cid:12)(cid:11)(cid:6)(cid:5)(cid:16)(cid:7)(cid:11)(cid:5)(cid:16)(cid:7)
+
+(cid:18)(cid:18)(cid:18)
+
+(cid:1)(cid:10)(cid:11)(cid:8)(cid:6)(cid:9)(cid:7)
+
+c1
+
+(cid:1)(cid:10)(cid:11)(cid:8)(cid:6)(cid:9)(cid:7)
+
+c2
+
+(cid:18)(cid:18)(cid:18)
+
+(cid:1)(cid:10)(cid:11)(cid:8)(cid:6)(cid:9)(cid:7)
+c10
+
+(cid:2)(cid:6)(cid:5)(cid:3)(cid:4)(cid:7)(cid:1)
+
+(cid:2)(cid:6)(cid:5)(cid:3)(cid:4)(cid:7)(cid:1)
+
+(cid:18)(cid:18)(cid:18)
+
+c1
+
+c2
+
+(cid:2)(cid:6)(cid:5)(cid:3)(cid:4)(cid:7)(cid:1)
+
+c10
+
+Figure 1. A graphical structure of the proposed method.
+
+Vector can be classiﬁed into two categories, Distributed
+Memory Model of Paragraph Vectors (PV-DM) and Dis-
+tributed Bag of Words version of Paragraph Vector (PV-
+DBOW). The main structure of these two Paragraph Vector
+methods is to predict word(s) in a context (a sequence of
+training words). The proposer of Paragraph Vector, Le et al.,
+recommended [11] the combination with these models and
+we use both at the same time.
+
+Every article is represented as a vector of ﬁxed-length
+da by using two kind methods of Paragraph Vector as
+mentioned above, and then we concatenate the distributed
+representations of articles concerning 10 companies to make
+the group article vector pt. Hence, the vector pt has 10
+times the dimensions of a vector of each article.
+
+However, this method assumes that there is always one
+article about every company published at every timestep,
+which is rare case in reality. To deal with this, we ﬁrst ﬁx
+the position of each company in the vector, and if there are
+no article about a certain company in a timestep, we insert
+zero vector instead. In the case that multiple articles about
+a company are published at a single timestep, we average
+these article’s distributed representations. For example, we
+assume that each companies denoted as {c1, c2, . . . , c10},
+and if there are no articles about company c2 and two articles
+about c10, the vector of article group at timestep t is
+
+(cid:2)
+
+(cid:3)
+
+pt =
+
+at
+c1
+
+, 0, . . . ,
+
+at
+
+c10,1
+
++ at
+
+c10,2
+
+2
+
+,
+
+(1)
+
+where at
+company cn at timestep t.
+
+cn is the article distributed representation about
+
+3.2. Representation of numerical information
+
+We denote our numerical information (stock prices) of
+all 10 companies at timestep t as vector nt. Since the scale
+of price depends on companies, we normalize stock price.
+We normalize the price for a given stock to be within
+
+the range of “[-1, 1]”, by the following fomula:
+
+valuet
+cn
+
+=
+
+2 ∗ pricet
+
+− (maxcn + mincn )
+
+cn
+
+maxcn − mincn
+
+,
+
+(2)
+
+where pricet
+cn is the stock price of company cn at day t, and
+maxcn and mincn are the maximum and minimum stock
+price of cn during the priod of training dataset respectively.
+
+3.3. Concatenation of textual and numerical infor-
+mation
+
+The input vector xt of LSTM is obtained from the com-
+bination of article group vector pt and stock prices vector
+nt. The two vector pt and nt might not be concatenate
+directly because there is a great difference between the num-
+ber of their dimensions. This is likely to cause that LSTM
+will be inﬂuenced more heavily by the textual information,
+which has much more dimensions than stock prices. This
+imbalance could hinder the accuracy of predictions.
+
+To solve this problem, we scale the size of these vectors
+in order to get each of them having the amount of same
+dimensions. In other words, we extend/reduce the dimen-
+sions of the vectors pt and nt to be the half of dimensions
+dx of the input vector xt. We utilize a neural network as
+the method of scaling. By using the neural network, we
+transform the vector into any dimensions. We also expect
+our neural network to learn information important for stock
+price prediction during training. Input vector xt is made by
+concatenating Pt and Nt, which are shrunken pt and ex-
+tended nt ,respectively, where Pt, Nt and xt are computed
+as follows:
+
+Pt = Wppt + bp,
+Nt = Wnnt + bn,
+
+(cid:4)
+
+(cid:5)
+
+(3)
+(4)
+
+(5)
+
+xt =
+
+where the matrices Wp ∈ R
+dx×dn
+represent the weights, and bp and bn represent their biases.
+
+,
+
+Pt Nt
+dx×dp and Wn ∈ R
+
+4. Evaluation
+
+In this section, we examined the validity of the approach
+with real-world newspaper articles and stock price data.
+We checked qualitatively whether the vector represented by
+Paragraph Vector was able to express events shown in the
+articles of the article event, and summarized the results of
+market simulation of our model.
+
+4.1. Experimental settings
+
+We used the morning edition of the Nikkei newspaper
+published from 2001 to 2008 for our experiments, with the
+news from year 2001 to 2006 as the training data, 2007
+as validation data, and 2008 as test data. The target 10
+companies were chosen from Nikkei 225 and the same
+industries. We chose the 10 companies that most frequently
+appeared in the news articles for the entire period.
+
+To acquire ﬁxed-length vector representation for articles
+by Paragraph Vector, we ﬁrst parsed the articles into words
+to get the vocabulary through a morphological analysis. We
+
+TABLE 1. TOP 10 HEADLINES AND THEIR COSINE SIMILARITIES WITH
+
+RESPECT TO THE OBJECT HEADLINE.
+
+object
+
+similarity
+0.794798
+
+0.681050
+
+0.648905
+
+0.632631
+
+0.626224
+
+0.593248
+
+0.587197
+
+0.580533
+
+0.579858
+
+(cid:964)(cid:996)(cid:955) (cid:1829) (cid:3558)(cid:3516) 2 (cid:2302) (cid:2041)(cid:3595) (cid:3395)(cid:3503) (cid:635)
+Announcement of consolidation of
+two suppliers afﬁliated with Toyota.
+
+headline
+
+(cid:3284)(cid:2184)(cid:1829)(cid:3558)(cid:3516) 2 (cid:2302)(cid:887)(cid:2041)(cid:3595)(cid:2461)(cid:3293)(cid:635)
+Approval of consolidation of
+(cid:3284)(cid:1717)(cid:1829)(cid:969)(cid:959)(cid:964)(cid:2498)(cid:1866)(cid:2041)(cid:3595)(cid:3395)(cid:3503)(cid:635)
+Announcement of consolidation of
+
+two suppulier afﬁliated with Nissan.
+
+stock company afﬁliated with Nikko Securities
+
+(cid:2174)(cid:3483)(cid:2446)(cid:2244)(cid:1829)(cid:1556)(cid:2658)(cid:3135)(cid:4045) 2 (cid:2302)(cid:2041)(cid:3595)(cid:634)(cid:3922)(cid:3301) 4 (cid:1860)(cid:989)(cid:965)(cid:2041)(cid:1177)(cid:635)
+Two electric steel comp. afﬁliated with Mitsubishi
+in the Kansai region agree about the consolidation.
+
+(cid:3284)(cid:2184)(cid:634)(cid:940)(cid:999)(cid:660)(cid:979)(cid:1754)(cid:3877) 4 (cid:2302)(cid:3191)(cid:2041)(cid:3395)(cid:3503)(cid:635)
+
+Nissan announces the merger of
+afﬁliated four ﬁnancial companies.
+
+(cid:2566)(cid:3256)(cid:2706)(cid:1885)(cid:3258)(cid:963)(cid:927)(cid:660)(cid:997)(cid:660)(cid:2102)(cid:3620)
+
+(cid:661)(cid:661)(cid:964)(cid:996)(cid:955)(cid:1829)(cid:634)(cid:2036)(cid:1667)(cid:2306)(cid:957)(cid:991)(cid:969)(cid:999)(cid:634)(cid:3284)(cid:2184)(cid:1829)(cid:634)(cid:3426)(cid:2302) 2 (cid:2302)(cid:2041)(cid:3595)(cid:635)
+(cid:661)(cid:661) consolidation of deluxe car channel afﬁliated Toyota
+
+Dealers in Kanagawa reorganize
+
+and sales company afﬁliated Nissan.
+
+(cid:2174)(cid:3483)(cid:2263)(cid:634)(cid:3558)(cid:3516)(cid:2652)(cid:2184)(cid:1184)(cid:1541)(cid:661)(cid:661)(cid:964)(cid:996)(cid:955)(cid:1829)(cid:884)(cid:907)(cid:635)
+
+Mitsubishi moters conducts car production transfer
+
+(cid:661)(cid:661) also inﬂuenced on Toyota.
+
+0.590510 (cid:971)(cid:928)(cid:978)(cid:998)(cid:959)(cid:965)(cid:3558)(cid:3516) 10 (cid:3754)(cid:2886)(cid:3580)(cid:634)(cid:964)(cid:996)(cid:955)(cid:634)(cid:3284)(cid:2184)(cid:884)(cid:1689)(cid:1669)(cid:661)(cid:661)(cid:3087)(cid:1822)(cid:3395)(cid:3503)(cid:635)
+
+Toyota supplies parts of 100 thousand hybrid cars with Nissan
+
+(cid:661)(cid:661) announcement about cooperation.
+(cid:3531)(cid:2204)(cid:949)(cid:976)(cid:660)(cid:965)(cid:930)(cid:931)(cid:928)(cid:634)(cid:964)(cid:996)(cid:955)(cid:634)(cid:3353)(cid:2345)(cid:1958)(cid:2476)(cid:635)
+
+Toyota negotiates acquisition of Fuji International Speedway.
+
+(cid:3284)(cid:2184)(cid:634)(cid:3284)(cid:2184)(cid:963)(cid:927)(cid:660)(cid:952)(cid:999)(cid:634)(cid:964)(cid:997)(cid:959)(cid:939)(cid:1694)(cid:3209)(cid:1417)(cid:3395)(cid:3395)(cid:3503)(cid:635)
+
+Nissan and Nissan diesel motor announce
+
+about co-development of truck.
+
+GM(cid:638)(cid:3531)(cid:2204)(cid:2383)(cid:634)(cid:2239)(cid:3722)(cid:3087)(cid:1822)(cid:923)(cid:3395)(cid:3503)(cid:661)(cid:661)(cid:949)(cid:950)(cid:937)(cid:638)(cid:3531)(cid:2204)(cid:2383)(cid:907)(cid:1958)(cid:2476)(cid:635)
+GM and Fuji heavy industries announce about capital alliance
+(cid:661)(cid:661) Suzuki and Fuji Heavy Industries are also in negotiation.
+
+used MeCab [19] as the morphological analyzer, and added
+Wikipedia entries and Nihon Keizai Shinbun’s keywords
+to the dictionary of MeCab to deal with possible proper
+nouns. Moreover, Ding et al. [9] suggest that news titles
+alone are able to provide sufﬁcent information to represent
+news articles and more helpful for prediction compared to
+the article’s contents. Hence, our experiments also used
+distributed representation of only news titles.
+
+4.2. Acquiring distributed representation
+
+As mentioned in Section 3.1, we converted articles into
+their distributions, and combined those into article groups.
+We evaluated the validity of these approaches, the results
+are shown below.
+
+4.2.1. Distributed representation of articles. In terms of
+distributed representation, words and sentences which have
+similar meaning are mapped into similar positions in the
+vector space. Hence, cosine similarity of similar meaning
+articles are high. We calculated the cosine similarity between
+a vector of certain article with respect to others. We took
+up the top 10 articles that had the highest cosine similarity
+to evaluate whether these articles did indeed have similar
+meanings.
+Table 1 shows that top 10 articles and their cosine simi-
+larities in regard to the article “(cid:964)(cid:996)(cid:955)(cid:1829)(cid:3558)(cid:3516) 2 (cid:2302)(cid:2041)(cid:3595)(cid:3395)(cid:3503)(cid:635)
+(Announcement of consolidation of two suppliers afﬁliated
+with Toyota.)”. Name of auto manufacturer such as “Toyota”
+and “Nissan” appears in the almost all of the top 10 news
+title. Moreover, many of news titles have “consolidation”
+
+and similar words like “merger” or “cooperation”. These 10
+news titles do indeed have similar meanings when compared
+to the object. It appears that Paragraph Vector is capable of
+capturing the article’s meanings as indeed.
+
+4.2.2. Distributed representation of article groups. We
+evaluated the distributed representation of article groups by
+combining each article representations whether considered
+the meaning with cosine similarity, same as for articles.
+However, owing to limitations of space, we present only
+the group with the highest cosine similarity. Note that, for
+the purpose of this evaluation, we combined articles by their
+dates, and thus expected to ﬁnd the day that have the most
+similar articles, if our approach did indeed work.
+
+Table 2 shows two article groups. The upper part shows
+the object group and lower part shows the group which has
+the highest similarity score. We concluded that these articles
+were similar by comparing the contents of articles among
+each like “vise president, company funeral” and “president,
+farewell party” at the article V and G. Further, the article
+VI and A have similar since both of them had a negative
+affect on Fujitsu.
+
+Cosine similarity between these groups was about 0.33.
+Compared to previous distributed representation of article
+evaluation, the overall score was smaller. This was however
+natural since there were few article groups having similar
+meaning to a certain group. The closer to 1 cosine similarity
+gets, the more two vectors are getting towards perfect match-
+ing. In a article group, perfect matching would imply every
+single article about the 10 companies is reporting the same
+events on the same day; this is extremely unlikely to occur.
+Thus, the cosine similarity 0.33 was sufﬁcient to justify our
+method of combining articles into groups as valid.
+
+4.3. Market simulation
+
+In this section, we evaluated the results of a market
+simulation on our approach with parts relaced with other
+baseline approaches.
+
+4.3.1. Strategy on market simulation. Our approach re-
+ceives the opening prices of day t and vectors representing
+news titles about 10 companies, and predicts the close prices
+by regression. We simulated real-world stock trading by the
+strategy proposed by Lavrenko et al. [7], which was given
+by
+
+closingpred
+
+(t) − openingtrue
+
+(t)
+
+cn
+
+cn
+openingtrue
+
+(t)
+
+cn
+
+,
+
+(6)
+
+rcn (t) =
+
+buy → sell
+sell → buy
+
+(rcn (t) > 0),
+(rcn (t) < 0),
+
+(t) =
+
+gaincn
+
+(7)
+where buy → sell denotes a transaction purchasing stocks at
+the opening price. During the holding time, if a stock is able
+to make proﬁts of 2% or more, the stock is sold instantly.
+Otherwise, the stock is sold at the closing price. We used
+the same strategy for short selling. sell → buy denotes
+a transaction selling short at the opening price. If a stock
+
+(cid:6)
+
+TABLE 2. THE GROUP OF ARTICLES HAVING THE HIGHEST COSINE
+SIMILARITY WITH RESPECT TO THE OBJECT GROUP WHICH IS UPPER.
+
+I.
+
+(cid:2618)(cid:3503) (cid:1728)(cid:2679)(cid:3879)(cid:2781) (cid:2350)(cid:2649) (cid:638) (cid:3345)(cid:3184) (cid:1183)(cid:3208) (cid:635)
+Table of earnings revision and change of dividend policies.
+(cid:854)(cid:912)(cid:847) (cid:887) (cid:1854)(cid:2185) (cid:3395)(cid:3503) (cid:635)
+Today’s announcement of ﬁnancial statements.
+
+II.
+III. (cid:3284)(cid:1558) (cid:887) (cid:3135)(cid:2208)(cid:2446)(cid:2324)(cid:1214) (cid:2210)(cid:2516) (cid:634) (cid:2176)(cid:1347) (cid:1575)(cid:1728) (cid:887) (cid:3639)(cid:2370)(cid:1417)(cid:2205)
+
+(cid:661)(cid:661) (cid:2174)(cid:3483)(cid:2799)(cid:1882) (cid:883)(cid:882) (cid:634) (cid:3922)(cid:3301) (cid:634) (cid:2286)(cid:2498)(cid:2286)(cid:1895) (cid:635)
+
+Japanese and Korean of e-commerce market starts to invite participant company
+Mitsubishi Research Institute etc. conduct demonstration experiment
+in the next year.
+
+IV. (cid:3938)(cid:1273) (cid:1452)(cid:3078) (cid:3354)(cid:915) (cid:880) (cid:2835)(cid:3928) (cid:634) (cid:2955)(cid:1340)(cid:853)(cid:915) (cid:3791)(cid:3601) 1000 (cid:3026)(cid:866)
+
+Proﬁt booking makes futher losses, the number of declining stocks exceeds 1000.
+( (cid:1490)(cid:2268) ) (cid:1922) (cid:2559)(cid:1260) (cid:3427) (cid:1717) (cid:2223) ( (cid:1897) NTT (cid:965)(cid:943)(cid:990) (cid:3565)(cid:2302)(cid:3029) ) (cid:887) (cid:2302)(cid:2804) (cid:635)
+The company funeral of Norioki Morinaga
+(the former vise president of NTT docomo).
+9 (cid:1860) (cid:2980)(cid:1554)(cid:1854)(cid:2185) (cid:3722)(cid:1448) (cid:1341) (cid:634) (cid:1728)(cid:2679) (cid:2732)(cid:3612) (cid:2541) (cid:1703)(cid:903)(cid:916)
+
+V.
+
+VI.
+
+(cid:661)(cid:661) (cid:3174)(cid:2291) (cid:638) (cid:3531)(cid:2204)(cid:3048) (cid:883)(cid:882) (cid:1340)(cid:3928) (cid:635)
+
+Interim results of September become serious,
+
+and the ability of judge performance is required
+(cid:661)(cid:661) the price of Toshiba and Fujitsu were declined.
+
+VII. (cid:2184)(cid:1728)(cid:1773)(cid:3214)(cid:1341) (cid:2864)(cid:2150) (cid:634) (cid:1830)(cid:1254)(cid:2304) (cid:914) (cid:880) (cid:1393)(cid:1630) (cid:634) (cid:1830)(cid:2184)(cid:2482) (cid:853) (cid:2691)(cid:3953) (cid:635)
+
+A measure of hollowing out of industry was discussed by managers
+
+and established by ministry of economy, trade and industry.
+
+A. (cid:3531)(cid:2204)(cid:3048) (cid:634) 3000 (cid:2579) (cid:923) (cid:1183)(cid:3208) (cid:638) (cid:2143)(cid:1902) (cid:661)(cid:661) (cid:3922)(cid:3301) (cid:3155) (cid:634) (cid:2055)(cid:2248) (cid:3816)(cid:2214)(cid:866) (cid:635)
+
+Fujitsu made change and ﬁred 3000 people
+
+B. (cid:926)(cid:999) (cid:957)(cid:946) (cid:634) 1 (cid:1860) (cid:2980)(cid:1554) (cid:634) 13 % (cid:1902)(cid:1273) (cid:634) 6 (cid:1327)(cid:1281)(cid:2738)(cid:1945)
+
+(cid:661)(cid:661) go toward the black in the next year.
+(cid:661)(cid:661) (cid:1905)(cid:2022) (cid:887) (cid:1822)(cid:2867) (cid:945)(cid:660)(cid:975)(cid:949) (cid:1970)(cid:858) (cid:3526)(cid:2556) (cid:635)
+(cid:661)(cid:661) current service for mobile phone is dull.
+
+C. (cid:963)(cid:660)(cid:955) (cid:852)(cid:914) ( 3 ) (cid:3571)(cid:2166) (cid:883) (cid:1754)(cid:3877) (cid:2667)(cid:2637) (cid:661)(cid:661) (cid:1912)(cid:2579) (cid:3172)(cid:2239) (cid:3686)(cid:859)(cid:916) (cid:1706)(cid:917)
+
+Artiza’s January interim results decrease 13% in proﬁt, six hundred million yen
+
+D.
+
+E.
+
+F.
+
+G.
+
+(cid:661)(cid:661) it is in danger of preventing individual investor.
+
+From data (3), a complex ﬁnancial tax system
+( (cid:2667) (cid:923) (cid:872)(cid:873)(cid:866) )(cid:686) (cid:3284)(cid:3722) (cid:3353)(cid:845) (cid:687) (cid:1592)(cid:2868) (cid:3698)(cid:914)(cid:905) (cid:661)(cid:661) (cid:2252)(cid:1345)(cid:2799)(cid:1465) (cid:2509)(cid:1168) (cid:3791)(cid:3601) (cid:853) (cid:1870)(cid:3024)
+(Correct tax) ”Buy Japanese” to be full of hope
+( (cid:1490)(cid:2268) ) (cid:3029) (cid:2252)(cid:1554) (cid:4069)(cid:1339) (cid:887) IC (cid:1000)(cid:943)(cid:660)(cid:956)(cid:660) (cid:661)(cid:661) (cid:3174)(cid:2291)
+A IC recorder which is able to record long time (cid:661)(cid:661) Toshiba.
+( (cid:967)(cid:993)(cid:660)(cid:977)(cid:931)(cid:660)(cid:949) ) (cid:2174)(cid:3483)(cid:2446) ( (cid:1340) ) (cid:998)(cid:949)(cid:939) (cid:884) (cid:3547)(cid:858) (cid:883)(cid:845) (cid:2762)(cid:2539) (cid:897)
+
+(cid:661)(cid:661) brands which are higher lank of market capitalization are steady.
+
+(cid:661)(cid:661) (cid:2244)(cid:1728) (cid:2239)(cid:2184) (cid:883)(cid:882) (cid:1200)(cid:1897)(cid:1541)(cid:3943)
+(cid:661)(cid:661) unitarily manage the business property.
+
+(New face) Mistubishi aim not to lose risk
+( (cid:1393)(cid:2302) (cid:1882)(cid:1664) ) (cid:1922) (cid:3134)(cid:3558)(cid:3592)(cid:1200)(cid:4064) (cid:2223) ( (cid:1897) (cid:2174)(cid:3483)(cid:2446)(cid:2244) (cid:2302)(cid:3029) ) (cid:887) (cid:851)(cid:3612)(cid:917)(cid:1393) (cid:635)
+(Company research) A farewell party of Bunichiro Tanabe
+
+(the form president of Mitsubishi).
+
+price decrease 2% or more at the opening price, the stock
+is bought instantly. Otherwise, the stock is bought at the
+closing price. The upper limit of a purchase was 1,000,000
+Japanese yen per company. We made our transaction costs
+as close to 1,000,000 Japanese yen as possible depending
+on the share unit number1.
+
+4.3.2. Parameters of our approach. The parameters of our
+approach selected using validation data are as follows.
+
+Paragraph Vector. The sliding window size (the
+length of words considered in Paragraph Vector) of PV-DM
+and PV-DBOW was 9. In each model, the learned vector
+representations had 100 dimensions. Hence the dimensions
+of an article’s distributed representation da which was the
+concatenation of two vectors was 200, and the number of
+dimensions of article group dp was 2000.
+
+Input data. We reduced the dimensions of article
+group vector pt from 2000 to 500, and extended the di-
+mensions of opening price vector nt from 10 to 500. Thus
+making the input vector xt to have 1000 dimensions, and the
+target industries were “Transportation Equipment”, “Phar-
+maceutical”, “Machinery”, “Electronics” and “Wholesale
+Trade”. The reason we chose them was that there were the
+
+1. The unit of the number of purchasing/selling stock.
+
+TABLE 3. COMPARISON OF TRADE GAINS WITH INPUT VARIATIONS ON
+
+FIVE INDUSTRIES.
+
+TABLE 5. WITH VARIATIONS IN NUMBER OF THE OBJECT COMPANIES,
+
+COMPARISON OF TRADE GAINS ON 5 INDUSTRIES.
+
+(Ten Thousands of Yen)
+
+BoW+Num PV+Num (ours)
+
+Industry/model
+
+Transportation Equipment
+
+Pharmaceutical
+
+Machinery
+Electronics
+
+Wholesale Trade
+
+Overall
+
+Num
+272.15
+148.14
+−25.06
+73.72
+255.38
+724.33
+
+433.33
+214.80
+−214.46
+54.69
+−58.28
+430.08
+
+548.02
+263.6
+122.75
+87.46
+190.07
+1211.90
+
+(Ten Thousands of Yen)
+
+same-Ind. (ours)
+
+Industry/model
+
+Transportation Equipment
+
+Pharmaceutical
+
+Machinery
+Electronics
+
+Wholesale Trade
+
+Overall
+
+one-Co.
+−310.67
+170.5
+−588.83
+−297.42
+−158.01
+−1184.43
+
+548.02
+263.6
+122.75
+87.46
+190.07
+1211.90
+
+TABLE 4. COMPARISON OF TRADE GAINS WITH LEARNER VARIATIONS
+
+ON 5 INDUSTRIES.
+
+(Ten Thousands of Yen)
+Simple-RNN
+
+LSTM (ours)
+
+Industry/model
+
+Transportation Equipment
+
+Pharmaceutical
+
+Machinery
+Electronics
+
+Wholesale Trade
+
+Overall
+
+MLP
+SVR
+−21.34
+−38.33
+19.56
+48.67
+−154.72 −341.41
+−204.97
+25.91
+4.01
+55.02
+−561.14
+−46.96
+
+211.32
+70.01
+−321.29
+129.55
+172.95
+262.54
+
+548.02
+263.6
+122.75
+87.46
+190.07
+1211.90
+
+only industies that had more than 10 companies in Nikkei
+225.
+
+LSTM. The size of each minibatch was 30, LSTM
+had one layer and were unrolled 20 steps, and on the basis
+of Wojciech et al. [20], we applyed 50% dropout on the non-
+recurrent connections. We trained the LSTM for 50 epochs
+with Adam [21].
+
+4.3.3. Results. We evaluated the effectiveness of our ap-
+proach with the following experiments:
+
+Effectiveness of Paragraph Vector. We compared
+with the two baseline methods by replacing input in order
+to evaluate the effectiveness of Paragraph Vector. The ﬁrst
+baseline used only the numerical data as input to investigate
+the effectiveness of textual information. The input vector xt
+of this method had 500 dimensions and no dropout. Second
+baseline employed the vector represented by BoW instead of
+Paragraph Vector as textual information. We applyed feature
+selection method on the basis of the word’s frequency of
+occurrence to improve prediction accuracies. All words were
+sorted in descending order of their occurrence, and words
+between 30% and 90% were selected as the vocablary. The
+number of words in our vocablaries is 9,153 / 7,891 /
+10,963 / 9,916 / 4,334 of the industries from Section 4.3.2
+respectively.
+
+The experimental results are shown in Table 3. Our ap-
+proach was able to make the more proﬁts from all industries
+compared to using BoW (BoW+Num). The overall proﬁt of
+our approach was 1211.90, much higher than that 430.08
+of BoW+Num. Comparing with the method that used only
+numerical information as inputs (Num), our approach got
+more proﬁts in the four out of ﬁve industries and the total
+was also higher by about 490 points. From the above results,
+we concluded that it was indeed effective for stock price
+prediction to employ distributed representations by utilizing
+Paragraph Vector.
+
+TABLE 6. COMPARISON OF TRADE GAINS ON 10 BRANDS.
+
+brand code/model
+
+7203
+7201
+4502
+4452
+6301
+6367
+6758
+6501
+8058
+8031
+Overall
+
+one-Co.
+23.39
+−47.80
+−4.29
+57.23
+29.19
+−5.88
+−45.55
+4.34
+−26.21
+−3.43
+−19.01
+
+same-Ind.(ours)
+
+(Ten Thousands of Yen)
+diff-Ind.
+−6.23
+−47.77
+9.97
+15.93
+−38.22
+24.02
+−51.14
+−28.80
+43.06
+64.90
+62.14
+
+37.11
+−27.26
+12.85
+28.55
+63.11
+30.38
+−13.3
+62.0
+50.93
+39.82
+284.19
+
+Effectiveness of LSTM. In the next experiment, we
+evaluated the performance of LSTM by replacing it with
+three baseline classiﬁers. The ﬁrst baseline classiﬁer was
+Multi Layer Perceptron (MLP). The MLP we used have two
+layers with 500 and 250 units. Second baseline classiﬁer
+was Support Vector Regression with Radial Basis Function
+(RBF) as its kernel and parameters γ and C were chosen
+by grid search for each brands. The searching ranges for
+γ and C were [10−4, 100] and [100, 104], respectively. We
+veriﬁed the necessity of considering time series data in
+comparison with MLP and SVR which do not consider.
+The other classiﬁer was RNN (Simple-RNN) to evaluate that
+LSTM cells was able to capture the time series inﬂuences
+which were caused by news events.
+
+The results are reported in Table 4. As we can see, the
+proﬁts of our model over all industries were higher than
+the MLP. In comparison with SVR, our model received
+higher proﬁts in four out of ﬁve industries. Moreover, RNN
+and LSTM were classiﬁers that received any proﬁts at all,
+which indicated a model considering time series data was
+essential for stock price prediction. LSTM had signiﬁcantly
+outperformed Simple-RNN in spite of both model were
+capable of considering time series data. The difference of
+these networks is that the dynamics is either deterministic or
+nondeterministic transactions from previous to current hid-
+den states. Since LSTM, being nondeterministic transactions
+got higher proﬁts, it was assumed that LSTM was able to
+capture the ﬂuctuating time series changes well.
+
+Effectiveness of considering multiple companies
+in the same industry. Finally, we performed two experi-
+ments to evaluate the effectiveness of considering multiple
+companies within the same industry. In the ﬁrst experiment,
+we compared our result with a baseline method where
+
+learned and predicted only one brand without the context
+of others. This was done for each of the 10 comanies to
+evaluate the effectiveness of considering multiple compa-
+nies. Table 5 shows the experimental results of our model
+considering a separated single company (one-Co.) and that
+considering 10 companies simultaneously (same-Ind.). By
+examining the results in table 5, we found that both indi-
+vidual industries and the total amount of earnings of our
+model were higher than one-Co.
+
+In the second experiment, we chose two companies from
+each of the ﬁve industries, and evaluated our method against
+two other baseline methods. This experiment was intended
+to evaluate the effectiveness of considering the same in-
+dustry. Table 6 shows the experimental results where our
+model, one-Co. and the model of considering 10 companies
+that belongs to different industies together (diff-Ind.). We
+compared with the results of the target brands of diff-Ind.,
+since could not compare among industries. By examining the
+results in table 6, the total earnings of diff-Ind. was higher
+than that of one-Co.. Hence, it is effective for predicting
+stock prices to consider multiple companies together. Table 6
+also shows that our model got higher earnings in the nine
+brands compared with diff-Ind. because our approach cap-
+tured correlations between companies in the same industry.
+
+5. Conclusion
+
+This paper proposed an approach to predict stock prices
+by employing distributed representations of news articles
+and considering the correlations between multiple compa-
+nies within the same industry. In our approach, a recurrent
+network captured the changes of time series inﬂuence on
+stock price.
+
+To evaluate the effectiveness of the approach, we con-
+ducted experiments on market simulation. Experimental
+results showed that distributed representations of textual
+information are better than the numerical-data-only methods
+and Bag-of-Words based methods, LSTM was capable of
+capturing time series inﬂuence of input data than other
+models, and considering the companies in the same industry
+was effective for stock price prediction.
+
+For future work, we would like to incoorporate more
+technical indices such as the moving average (MA) and the
+moving average convergence divergence (MACD) for better
+proﬁt-making capabilities.
+
+The authors would thank to Associate Professor
+Kazuhiro Seki of Konan University for valuable discussions.
+This work was partially supported by the JSPS KAKENHI
+(16K12487 and 26280040).
+
+References
+
+[1] K.-j. Kim, “Financial time series forecasting using support vector
+
+machines,” Neurocomputing, vol. 55, no. 1, pp. 307–319, 2003.
+
+[2] V. Lavrenko, M. Schmill, D. Lawrie, P. Ogilvie, D. Jensen, and
+J. Allan, “Language models for ﬁnancial news recommendation,” in
+Proceedings of the 9th International Conference on Information and
+Knowledge Management (CIKM-00), 2000, pp. 389–396.
+
+[3]
+
+F. E. Tay and L. Cao, “Application of support vector machines in
+ﬁnancial time series forecasting,” Omega, vol. 29, no. 4, pp. 309–
+317, 2001.
+
+[4] B. Bick, H. Kraft, and C. Munk, “Solving constrained consumption-
+investment problems by simulation of artiﬁcial market strategies,”
+Management Science, vol. 59, no. 2, pp. 485–503, 2013.
+
+[5] B. Adrian and L. Nathan, “An introduction to artiﬁcial prediction
+markets for classiﬁcation,” Journal of Machine Learning Research,
+vol. 13, pp. 2177–2204, 2012.
+
+[6] A. Devitt and K. Ahmad, “Sentiment polarity identiﬁcation in ﬁ-
+nancial news: A cohesion-based approach,” in Proceedings of the
+45th Annual Meeting of the Association of Computational Linguistics
+(ACL-07), June 2007, pp. 984–991.
+
+[7] V. Lavrenko, M. Schmill, D. Lawrie, P. Ogilvie, D. Jensen, and
+J. Allan, “Mining of concurrent text and time series,” in Proceedings
+of the KDD-2000 Workshop on Text Mining, 2000, pp. 37–44.
+
+[8] R. P. Schumaker and H. Chen, “Textual analysis of stock market
+prediction using breaking ﬁnancial news: The AZFin text system,”
+ACM Transactions on Information Systems (TOIS-09), vol. 27, no. 2,
+pp. 12:1–12:19, 2009.
+
+[9] X. Ding, Y. Zhang, T. Liu, and J. Duan, “Using structured events
+to predict stock price movement: An empirical investigation,” in
+Proceedings of the 2014 Conference on Empirical Methods in Natural
+Language Processing (EMNLP-14). Association for Computational
+Linguistics, 2014, pp. 1415–1425.
+
+[10] M. Hagenau, M. Liebmann, M. Hedwig, and D. Neumann, “Auto-
+mated news reading: Stock price prediction based on ﬁnancial news
+using context-speciﬁc features,” in System Sciences, 2012. Proceed-
+ings of the 45th Annual Hawaii International Conference on System
+Sciences (HICSS-12).
+
+IEEE, 2012, pp. 1040–1049.
+
+[11] M. Robert, R. Bharath, S. Mohammad, K. Gert, and P. Vijay,
+“Understanding protein dynamics with l1-regularized reversible
+hidden markov models,” in Proceedings of the 31st International
+Conference on Machine Learning (ICML-14), 2014, pp. 1197–
+1205.
+[Online]. Available: http://jmlr.org/proceedings/papers/v32/
+mcgibbon14.pdf
+
+[12] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” Neural
+
+computation, vol. 9, no. 8, pp. 1735–1780, 1997.
+
+[13] F. A. Gers, J. A. Schmidhuber, and F. A. Cummins, “Learning to
+forget: Continual prediction with lstm,” Neural Computation, vol. 12,
+no. 10, pp. 2451–2471, 2000.
+
+[14] G. Gidofalvi and C. Elkan, “Using news articles to predict stock price
+movements,” Department of Computer Science and Engineering,
+University of California, San Diego, 2001.
+
+[15] K. Izumi, T. Goto, and T. Matsui, “Trading tests of long-term market
+forecast by text mining,” in Proceedings of the tenth IEEE Interna-
+tional Conference on Data Mining Workshops (ICDM-10), 2010, pp.
+935–942.
+
+[16] B. Johan and M. Huina, “Twitter mood as a stock market predictor,”
+
+IEEE Computer, vol. 44, no. 10, pp. 91–94, 2011.
+
+[17] M. andr Mittermayer, “Forecasting intraday stock price trends with
+text mining techniques,” in System Sciences, 2004. Proceedings of
+the 37th Annual Hawaii International Conference on System Sciences
+(HICSS-04), 2004.
+
+[18] S. Jianfeng, M. Arjun, L. Bing, J. P. Sinno, L. Qing, and L. Huayi,
+“Exploiting social relations and sentiment for stock prediction,” in
+Proceedings of the 2014 Conference on Empirical Methods in Natural
+Language Processing (EMNLP-14), 2014, pp. 1139–1145.
+
+[19] T. Kudo, “Mecab: Yet another part-of-speech and morphological
+
+analyzer,” http://mecab.sourceforge.net/, 2005.
+
+[20] Z. Wojciech, S. Ilya, and V. Oriol, “Recurrent neural network
+regularization,” CoRR, vol. abs/1409.2329, 2014. [Online]. Available:
+http://arxiv.org/abs/1409.2329
+
+[21] D. P. Kingma and J. Ba, “Adam: A method for
+
+stochastic
+optimization,” CoRR, vol. abs/1412.6980, 2014. [Online]. Available:
+http://arxiv.org/abs/1412.6980
+
+
