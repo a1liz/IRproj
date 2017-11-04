@@ -1,5 +1,7 @@
 import os
 import re
+import fileinput
+import json
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.converter import TextConverter
@@ -23,8 +25,8 @@ def pdfTotxt1(filepath,outpath):
         device.close()
         outfp.flush()
         outfp.close()
-    except Exception, e:
-         print "Exception:%s",e
+    except Exception as e:
+         print ("Exception:%s",e)
 
 
 def pdfTotxt(fileDir):
@@ -37,6 +39,34 @@ def pdfTotxt(fileDir):
         filePath=fileDir+'/'+file
         outPath=tarDir+'/'+re.sub(replace,'',file)+'.txt'
         pdfTotxt1(filePath,outPath)
-        print "Saved "+outPath
+        print ("Saved " + outPath)
 
-pdfTotxt('./paper')
+def calTF(fileDir):
+    files=os.listdir(fileDir)
+    punctuation = {'\'s', '(', ')', ',', '.', '!', ':',
+                   ';', '?', '--', '?', '\''}
+    tfdict = {}
+    for file in files:
+        child = os.path.join(file)
+        tmp = {}
+        for line in fileinput.input(fileDir + '/' + child):
+            for pun in punctuation:
+                if pun in line:
+                    line = line.replace(pun, ' ')
+            for word in line.lower().split():
+                if word not in tmp:
+                    tmp[word] = 1
+                else:
+                    tmp[word] += 1
+        tfdict[child[0:-5]] = tmp
+    json_str = json.dumps(tfdict)
+    try:
+        f = open('tfRecording.json','w')
+        f.write(json_str)
+        f.close()
+    except BaseException as e:
+        print("error: " + e)
+         
+
+if __name__ == '__main__':
+    calTF('./papertxt')
