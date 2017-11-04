@@ -2,6 +2,7 @@ import os
 import re
 import fileinput
 import json
+import math
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.converter import TextConverter
@@ -66,7 +67,72 @@ def calTF(fileDir):
         f.close()
     except BaseException as e:
         print("error: " + e)
-         
+
+def calDF():
+    dfdict = {}
+    with open('tfRecording.json') as json_file:
+        data = json.load(json_file)
+        for name in data:
+            for word in data[name]:
+                if word not in dfdict:
+                    dfdict[word] = 1
+                else:
+                    dfdict[word] += 1
+    json_str = json.dumps(dfdict)
+    try:
+        f = open('dfRecording.json', 'w')
+        f.write(json_str)
+        f.close()
+    except BaseException as e:
+        print("error: " + e)
+
+def calNormalized():
+    normalizeddict = {}
+    with open('tfRecording.json') as json_file:
+        data = json.load(json_file)
+        for name in data:
+            sum = 0
+            tmp = {}
+            for word in data[name]:
+                sum = sum + 1 + math.log10(data[name][word])
+            for word in data[name]:
+                tmp[word] = (1 + math.log10(data[name][word]))/math.sqrt(sum)
+            normalizeddict[name] = tmp
+    json_str = json.dumps(normalizeddict)
+    try:
+        f = open('normalizedRecording.json','w')
+        f.write(json_str)
+        f.close()
+    except BaseException as e:
+        print("error: " + e)
+            
+def query(word):
+    wordlist = word.lower().split()
+    scorelist = {}
+    with open('dfRecording.json') as df_file:
+        df = json.load(df_file)
+        with open('tfRecording.json') as tf_file:
+            tf = json.load(tf_file)
+            with open('normalizedRecording.json') as n_file:
+                norm = json.load(n_file)
+                for name in norm:
+                    score = 0
+                    for wd in wordlist:
+                        if wd in norm[name]:
+                            score += ((1+math.log10(tf[name][wd]))*math.log10(12.0/df[wd]))*norm[name][wd]
+                    scorelist[name] = score * 1000
+    return scorelist
+
+def sortlist(scorelist):
+    
+    dict= sorted(scorelist.items(), key=lambda d:d[1], reverse = True)
+    for i in dict:
+        print(i)
+                        
 
 if __name__ == '__main__':
-    calTF('./papertxt')
+    #calTF('./papertxt')
+    #calDF()
+    #calNormalized()
+    a = "5G mobile"
+    sortlist(query(a))
