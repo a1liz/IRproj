@@ -111,7 +111,7 @@ def calNormalized():
     except BaseException as e:
         print("error: " + e)
             
-# 进行查询
+# 进行计算当前各论文得分情况并存入返回得分结果
 def query(word):
     wordlist = word.lower().split()
     scorelist = {}
