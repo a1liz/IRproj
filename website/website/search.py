@@ -3,11 +3,11 @@ from django.views.decorators import csrf
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
-from . import IRproj
+from . import IRproj2
 
 @csrf_exempt
 def search_post(request):
-    ctx = {'rlt':'实例：judgment&(and~go)'}
+    ctx = {'rlt':'实例：5G mobile'}
     if request.method =='POST':
         word=request.POST.get('q')
         ctx['rlt'] = 'afasdfasfas'
@@ -20,10 +20,9 @@ def ajax(request):
     if request.method =='POST':
         word=request.POST['q']
         try:
-            #tmp = IRproj.searchWord(word)
             if word == " ":
                 ctx['rlt'] = '请输入值'
-            result = IRproj.searchForBracket(word,1)
+            result = IRproj2.sortlist(word)
             if result == '':
                 ctx['rlt'] = '结果为空'
             else:
